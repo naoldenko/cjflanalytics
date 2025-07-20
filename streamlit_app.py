@@ -6,6 +6,16 @@ from plotly.subplots import make_subplots
 import numpy as np
 from utils import load_data, filter_data, create_player_profile, create_team_comparison
 
+# Initialize chart counter for unique keys
+if 'chart_counter' not in st.session_state:
+    st.session_state.chart_counter = 0
+
+def get_next_chart_key():
+    """Generate unique chart keys to prevent duplicate element IDs"""
+    key = f"chart_{st.session_state.chart_counter}"
+    st.session_state.chart_counter += 1
+    return key
+
 # Import new functions with fallback for deployment environments
 try:
     from utils import create_multi_player_profile, create_stat_comparison_chart
@@ -212,7 +222,7 @@ else:
                     yaxis=dict(gridcolor='#464646')
                 )
                 
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key=get_next_chart_key())
                 
                 # Display detailed table
                 st.subheader("📋 Detailed Rankings")
@@ -321,7 +331,7 @@ else:
             fig.update_xaxes(gridcolor='#464646')
             fig.update_yaxes(gridcolor='#464646')
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key=get_next_chart_key())
             
             # Detailed statistics table
             st.subheader("📋 Detailed Player Statistics")
@@ -480,7 +490,7 @@ else:
                 yaxis=dict(gridcolor='#464646')
             )
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key=get_next_chart_key())
         
         with comparison_tabs[1]:
             # Per game stats comparison
@@ -502,7 +512,7 @@ else:
                 yaxis=dict(gridcolor='#464646')
             )
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key=get_next_chart_key())
         
         with comparison_tabs[2]:
             # Offensive breakdown
@@ -524,7 +534,7 @@ else:
                 yaxis=dict(gridcolor='#464646')
             )
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key=get_next_chart_key())
         
         with comparison_tabs[3]:
             # Defensive breakdown
@@ -546,7 +556,7 @@ else:
                 yaxis=dict(gridcolor='#464646')
             )
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key=get_next_chart_key())
         
         # Team roster comparison
         st.subheader("👥 Team Roster Comparison")
@@ -597,7 +607,7 @@ else:
                 with col2:
                     # Radar chart for player stats
                     radar_fig = create_player_profile(profile_data)
-                    st.plotly_chart(radar_fig, use_container_width=True)
+                    st.plotly_chart(radar_fig, use_container_width=True, key=get_next_chart_key())
                 
                 with col3:
                     # Key stats
@@ -623,7 +633,7 @@ else:
             if not comparison_data.empty:
                 # Create comparison radar chart
                 comparison_radar_fig = create_multi_player_profile(comparison_data)
-                st.plotly_chart(comparison_radar_fig, use_container_width=True)
+                st.plotly_chart(comparison_radar_fig, use_container_width=True, key=get_next_chart_key())
                 
                 # Create comparison table
                 st.subheader("📋 Statistical Comparison")
@@ -648,7 +658,7 @@ else:
                 
                 if selected_stat:
                     comparison_chart = create_stat_comparison_chart(comparison_data, selected_stat)
-                    st.plotly_chart(comparison_chart, use_container_width=True)
+                    st.plotly_chart(comparison_chart, use_container_width=True, key=get_next_chart_key())
                 
                 # Individual player cards
                 st.subheader("👤 Individual Player Details")
@@ -721,7 +731,7 @@ else:
                 yaxis=dict(gridcolor='#464646')
             )
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key=get_next_chart_key())
             
             # Detailed table
             st.subheader("📋 Top 15 Total Yards Leaders")
@@ -753,7 +763,7 @@ else:
                 yaxis=dict(gridcolor='#464646')
             )
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key=get_next_chart_key())
             
             # Detailed table
             st.subheader("📋 Top 15 Passing Leaders")
@@ -785,7 +795,7 @@ else:
                 yaxis=dict(gridcolor='#464646')
             )
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key=get_next_chart_key())
             
             # Detailed table
             st.subheader("📋 Top 15 Rushing Leaders")
@@ -817,7 +827,7 @@ else:
                 yaxis=dict(gridcolor='#464646')
             )
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key=get_next_chart_key())
             
             # Detailed table
             st.subheader("📋 Top 15 Receiving Leaders")
@@ -849,7 +859,7 @@ else:
                 yaxis=dict(gridcolor='#464646')
             )
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key=get_next_chart_key())
             
             # Detailed table
             st.subheader("📋 Top 15 Touchdown Leaders")
@@ -881,7 +891,7 @@ else:
                 yaxis=dict(gridcolor='#464646')
             )
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key=get_next_chart_key())
             
             # Detailed table
             st.subheader("📋 Top 15 Tackle Leaders")
@@ -912,7 +922,7 @@ else:
                 yaxis=dict(gridcolor='#464646')
             )
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key=get_next_chart_key())
             
             # Detailed table
             st.subheader("📋 Top 15 Sack Leaders")
@@ -949,7 +959,7 @@ else:
                     yaxis=dict(gridcolor='#464646')
                 )
                 
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key=get_next_chart_key())
         
         with col2:
             # Touchdowns per Game Leaders
@@ -975,7 +985,7 @@ else:
                     yaxis=dict(gridcolor='#464646')
                 )
                 
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key=get_next_chart_key())
         
         # Per game stats table
         st.subheader("📋 Per Game Statistics Leaders")
