@@ -1,0 +1,2 @@
+# System dependencies for CJFL Analytics Dashboard
+# This file is used by Streamlit Cloud for system-level packages 
