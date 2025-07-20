@@ -4,7 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
-from utils import load_data, filter_data, create_player_profile, create_team_comparison
+from utils import load_data, filter_data, create_player_profile, create_team_comparison, create_multi_player_profile, create_stat_comparison_chart
 
 # Page configuration
 st.set_page_config(
@@ -236,49 +236,118 @@ else:
     # Individual Player Profile
     st.header("👤 Player Profile")
     
-    selected_player_profile = st.selectbox(
-        "Select Player for Profile",
+    # Allow multiple player selection for comparison
+    selected_players_profile = st.multiselect(
+        "Select Players for Profile Comparison (up to 5 players)",
         options=unique_players,
-        index=0 if unique_players else None
+        default=[unique_players[0]] if unique_players else []
     )
     
-    if selected_player_profile:
-        profile_data = filtered_data[filtered_data['Player Name'] == selected_player_profile]
+    if selected_players_profile:
+        # Create comparison layout
+        if len(selected_players_profile) == 1:
+            # Single player view (original layout)
+            profile_data = filtered_data[filtered_data['Player Name'] == selected_players_profile[0]]
+            
+            if not profile_data.empty:
+                player_info = profile_data.iloc[0]
+                
+                col1, col2, col3 = st.columns([1, 2, 1])
+                
+                with col1:
+                    st.markdown(f"""
+                    <div class="player-card">
+                        <h3>{player_info['Player Name']}</h3>
+                        <p><strong>Team:</strong> {player_info['Team']}</p>
+                        <p><strong>Position:</strong> {player_info['Position']}</p>
+                        <p><strong>Games Played:</strong> {player_info['Games Played']}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with col2:
+                    # Radar chart for player stats
+                    radar_fig = create_player_profile(profile_data)
+                    st.plotly_chart(radar_fig, use_container_width=True)
+                
+                with col3:
+                    # Key stats
+                    st.markdown(f"""
+                    <div class="metric-card">
+                        <h4>Key Statistics</h4>
+                        <p><strong>Passing Yards:</strong> {int(player_info['Passing Yards']):,}</p>
+                        <p><strong>Rushing Yards:</strong> {int(player_info['Rushing Yards']):,}</p>
+                        <p><strong>Receiving Yards:</strong> {int(player_info['Receiving Yards']):,}</p>
+                        <p><strong>Touchdowns:</strong> {int(player_info['Touchdowns'])}</p>
+                        <p><strong>Tackles:</strong> {int(player_info['Tackles'])}</p>
+                        <p><strong>Sacks:</strong> {int(player_info['Sacks'])}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
         
-        if not profile_data.empty:
-            # Player info card
-            player_info = profile_data.iloc[0]
+        else:
+            # Multiple player comparison view
+            st.subheader("📊 Player Comparison")
             
-            col1, col2, col3 = st.columns([1, 2, 1])
+            # Get data for all selected players
+            comparison_data = filtered_data[filtered_data['Player Name'].isin(selected_players_profile)]
             
-            with col1:
-                st.markdown(f"""
-                <div class="player-card">
-                    <h3>{player_info['Player Name']}</h3>
-                    <p><strong>Team:</strong> {player_info['Team']}</p>
-                    <p><strong>Position:</strong> {player_info['Position']}</p>
-                    <p><strong>Games Played:</strong> {player_info['Games Played']}</p>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            with col2:
-                # Radar chart for player stats
-                radar_fig = create_player_profile(profile_data)
-                st.plotly_chart(radar_fig, use_container_width=True)
-            
-            with col3:
-                # Key stats
-                st.markdown(f"""
-                <div class="metric-card">
-                    <h4>Key Statistics</h4>
-                    <p><strong>Passing Yards:</strong> {int(player_info['Passing Yards']):,}</p>
-                    <p><strong>Rushing Yards:</strong> {int(player_info['Rushing Yards']):,}</p>
-                    <p><strong>Receiving Yards:</strong> {int(player_info['Receiving Yards']):,}</p>
-                    <p><strong>Touchdowns:</strong> {int(player_info['Touchdowns'])}</p>
-                    <p><strong>Tackles:</strong> {int(player_info['Tackles'])}</p>
-                    <p><strong>Sacks:</strong> {int(player_info['Sacks'])}</p>
-                </div>
-                """, unsafe_allow_html=True)
+            if not comparison_data.empty:
+                # Create comparison radar chart
+                comparison_radar_fig = create_multi_player_profile(comparison_data)
+                st.plotly_chart(comparison_radar_fig, use_container_width=True)
+                
+                # Create comparison table
+                st.subheader("📋 Statistical Comparison")
+                
+                # Prepare comparison table
+                comparison_table = comparison_data[['Player Name', 'Team', 'Position', 'Games Played', 
+                                                 'Passing Yards', 'Rushing Yards', 'Receiving Yards', 
+                                                 'Touchdowns', 'Tackles', 'Sacks']].copy()
+                
+                # Format numbers for better display
+                for col in ['Passing Yards', 'Rushing Yards', 'Receiving Yards']:
+                    comparison_table[col] = comparison_table[col].apply(lambda x: f"{int(x):,}")
+                
+                st.dataframe(comparison_table, use_container_width=True)
+                
+                # Create bar chart comparison for key stats
+                st.subheader("📈 Performance Comparison")
+                
+                # Select stat to compare
+                stat_options = ['Passing Yards', 'Rushing Yards', 'Receiving Yards', 'Touchdowns', 'Tackles', 'Sacks']
+                selected_stat = st.selectbox("Select Statistic to Compare", options=stat_options)
+                
+                if selected_stat:
+                    comparison_chart = create_stat_comparison_chart(comparison_data, selected_stat)
+                    st.plotly_chart(comparison_chart, use_container_width=True)
+                
+                # Individual player cards
+                st.subheader("👤 Individual Player Details")
+                
+                # Create columns for player cards
+                num_players = len(selected_players_profile)
+                cols = st.columns(min(num_players, 3))  # Max 3 columns
+                
+                for i, player_name in enumerate(selected_players_profile):
+                    player_data = comparison_data[comparison_data['Player Name'] == player_name]
+                    if not player_data.empty:
+                        player_info = player_data.iloc[0]
+                        col_idx = i % 3
+                        
+                        with cols[col_idx]:
+                            st.markdown(f"""
+                            <div class="player-card">
+                                <h4>{player_info['Player Name']}</h4>
+                                <p><strong>Team:</strong> {player_info['Team']}</p>
+                                <p><strong>Position:</strong> {player_info['Position']}</p>
+                                <p><strong>Games:</strong> {player_info['Games Played']}</p>
+                                <p><strong>Passing:</strong> {int(player_info['Passing Yards']):,}</p>
+                                <p><strong>Rushing:</strong> {int(player_info['Rushing Yards']):,}</p>
+                                <p><strong>Receiving:</strong> {int(player_info['Receiving Yards']):,}</p>
+                                <p><strong>TDs:</strong> {int(player_info['Touchdowns'])}</p>
+                                <p><strong>Tackles:</strong> {int(player_info['Tackles'])}</p>
+                                <p><strong>Sacks:</strong> {int(player_info['Sacks'])}</p>
+                            </div>
+                            """, unsafe_allow_html=True)
 
     # Top Performers Section
     st.header("🏆 Top Performers (2024 Season)")

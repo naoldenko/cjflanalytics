@@ -277,4 +277,120 @@ def create_team_comparison(data: pd.DataFrame, team1: str, team2: str) -> go.Fig
         yaxis=dict(gridcolor='#464646')
     )
     
+    return fig
+
+def create_multi_player_profile(player_data: pd.DataFrame) -> go.Figure:
+    """
+    Create a radar chart for multiple player profile comparison.
+    """
+    if player_data.empty:
+        return go.Figure()
+    
+    # Normalize stats for radar chart (0-100 scale)
+    max_values = {
+        'Passing Yards': 3500,
+        'Rushing Yards': 2000,
+        'Receiving Yards': 1200,
+        'Touchdowns': 35,
+        'Tackles': 80,
+        'Sacks': 8
+    }
+    
+    categories = ['Passing Yards', 'Rushing Yards', 'Receiving Yards', 'Touchdowns', 'Tackles', 'Sacks']
+    
+    fig = go.Figure()
+    
+    # Color palette for multiple players
+    colors = ['rgb(32, 201, 151)', 'rgb(255, 99, 132)', 'rgb(54, 162, 235)', 
+              'rgb(255, 205, 86)', 'rgb(153, 102, 255)']
+    
+    for idx, (_, player_stats) in enumerate(player_data.iterrows()):
+        values = []
+        
+        for category in categories:
+            if category in max_values:
+                normalized_value = min(100, (player_stats[category] / max_values[category]) * 100)
+                values.append(normalized_value)
+            else:
+                values.append(0)
+        
+        color = colors[idx % len(colors)]
+        
+        fig.add_trace(go.Scatterpolar(
+            r=values,
+            theta=categories,
+            fill='toself',
+            name=player_stats['Player Name'],
+            line_color=color,
+            fillcolor=color.replace('rgb', 'rgba').replace(')', ', 0.3)'),
+            opacity=0.7
+        ))
+    
+    fig.update_layout(
+        polar=dict(
+            radialaxis=dict(
+                visible=True,
+                range=[0, 100]
+            )),
+        showlegend=True,
+        title="Multi-Player Profile Comparison",
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='#fafafa'),
+        legend=dict(
+            bgcolor='rgba(0,0,0,0)',
+            bordercolor='#464646',
+            borderwidth=1
+        )
+    )
+    
+    return fig
+
+def create_stat_comparison_chart(player_data: pd.DataFrame, stat_name: str) -> go.Figure:
+    """
+    Create a bar chart comparing a specific statistic across multiple players.
+    """
+    if player_data.empty:
+        return go.Figure()
+    
+    # Sort players by the selected stat
+    sorted_data = player_data.sort_values(stat_name, ascending=True)
+    
+    fig = go.Figure()
+    
+    # Color players by team
+    teams = sorted_data['Team'].unique()
+    colors = ['rgb(32, 201, 151)', 'rgb(255, 99, 132)', 'rgb(54, 162, 235)', 
+              'rgb(255, 205, 86)', 'rgb(153, 102, 255)', 'rgb(255, 159, 64)']
+    
+    for team in teams:
+        team_data = sorted_data[sorted_data['Team'] == team]
+        color = colors[list(teams).index(team) % len(colors)]
+        
+        fig.add_trace(go.Bar(
+            x=team_data['Player Name'],
+            y=team_data[stat_name],
+            name=team,
+            marker_color=color,
+            text=team_data[stat_name].apply(lambda x: f"{int(x):,}" if stat_name in ['Passing Yards', 'Rushing Yards', 'Receiving Yards'] else str(int(x))),
+            textposition='auto'
+        ))
+    
+    fig.update_layout(
+        title=f"{stat_name} Comparison",
+        xaxis_title="Players",
+        yaxis_title=stat_name,
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='#fafafa'),
+        xaxis=dict(gridcolor='#464646'),
+        yaxis=dict(gridcolor='#464646'),
+        barmode='group',
+        legend=dict(
+            bgcolor='rgba(0,0,0,0)',
+            bordercolor='#464646',
+            borderwidth=1
+        )
+    )
+    
     return fig 
