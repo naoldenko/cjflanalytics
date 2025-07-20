@@ -1,0 +1,15 @@
+{
+  "start_date": "2025-07-19T22:42:49.858310",
+  "teams": {
+    "Calgary Colts": {
+      "status": "in_progress",
+      "players_collected": 0,
+      "data_sources_checked": [],
+      "notes": "Started data collection process",
+      "last_updated": "2025-07-19T22:42:49.858325"
+    }
+  },
+  "total_players_collected": 0,
+  "total_teams_completed": 0,
+  "last_updated": "2025-07-19T22:42:49.858326"
+}

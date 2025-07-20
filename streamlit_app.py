@@ -65,17 +65,27 @@ data = load_cached_data()
 
 # Header
 st.title("🏈 CJFL Analytics Dashboard")
-st.markdown("**Canadian Junior Football League Player Statistics (2022-2024)**")
+st.markdown("**Canadian Junior Football League Player Statistics (2024 Season)**")
+
+# Data source indicator
+if not data.empty:
+    total_players = len(data['Player Name'].unique())
+    total_teams = len(data['Team'].unique())
+    
+    if total_teams >= 8:
+        st.success(f"✅ Real CJFL Data: {total_players} players from {total_teams} teams")
+    elif total_teams >= 4:
+        st.warning(f"⚠️ Partial Real Data: {total_players} players from {total_teams} teams")
+    else:
+        st.info(f"📊 Sample Data: {total_players} players from {total_teams} teams")
+else:
+    st.error("❌ No data available")
 
 # Sidebar filters
 st.sidebar.header("📊 Filters")
 
-# Season filter
-selected_seasons = st.sidebar.multiselect(
-    "Select Seasons",
-    options=sorted(data['Season'].unique()),
-    default=sorted(data['Season'].unique())
-)
+# Season filter (2024 only)
+selected_seasons = [2024]
 
 # Team filter
 all_teams = sorted(data['Team'].unique())
@@ -158,21 +168,21 @@ else:
             
             st.plotly_chart(fig, use_container_width=True)
 
-    # Stat Trends Over Years
-    st.header("📈 Player Performance Trends")
+    # Player Performance Analysis
+    st.header("📊 Player Performance Analysis")
     
-    # Player selector for trends
+    # Player selector for analysis
     unique_players = sorted(filtered_data['Player Name'].unique())
-    selected_player_trend = st.selectbox(
-        "Select Player for Trend Analysis",
+    selected_player_analysis = st.selectbox(
+        "Select Player for Performance Analysis",
         options=unique_players,
         index=0 if unique_players else None
     )
     
-    if selected_player_trend:
-        player_trend_data = filtered_data[filtered_data['Player Name'] == selected_player_trend]
+    if selected_player_analysis:
+        player_analysis_data = filtered_data[filtered_data['Player Name'] == selected_player_analysis]
         
-        if not player_trend_data.empty:
+        if not player_analysis_data.empty:
             # Create subplot for multiple stats
             fig = make_subplots(
                 rows=2, cols=2,
@@ -186,18 +196,17 @@ else:
             
             for stat, pos in zip(stats_to_plot, positions):
                 fig.add_trace(
-                    go.Scatter(
-                        x=player_trend_data['Season'],
-                        y=player_trend_data[stat],
-                        mode='lines+markers',
+                    go.Bar(
+                        x=[stat],
+                        y=[player_analysis_data[stat].iloc[0]],
                         name=stat,
-                        line=dict(width=3)
+                        showlegend=False
                     ),
                     row=pos[0], col=pos[1]
                 )
             
             fig.update_layout(
-                title=f"Performance Trends for {selected_player_trend}",
+                title=f"Performance Analysis for {selected_player_analysis} (2024 Season)",
                 plot_bgcolor='rgba(0,0,0,0)',
                 paper_bgcolor='rgba(0,0,0,0)',
                 font=dict(color='#fafafa'),
@@ -271,26 +280,21 @@ else:
                 </div>
                 """, unsafe_allow_html=True)
 
-    # Emerging Talent Section
-    st.header("⭐ Emerging Talent (Under 21)")
+    # Top Performers Section
+    st.header("🏆 Top Performers (2024 Season)")
     
-    # Simulate age data for emerging talent
-    emerging_data = filtered_data.copy()
-    emerging_data['Age'] = np.random.randint(18, 22, size=len(emerging_data))
-    emerging_talent = emerging_data[emerging_data['Age'] < 21]
+    # Calculate total yards for all players
+    filtered_data['Total Yards'] = filtered_data['Passing Yards'] + filtered_data['Rushing Yards'] + filtered_data['Receiving Yards']
+    top_performers = filtered_data.nlargest(15, 'Total Yards')
     
-    if not emerging_talent.empty:
-        # Top emerging players by total yards
-        emerging_talent['Total Yards'] = emerging_talent['Passing Yards'] + emerging_talent['Rushing Yards'] + emerging_talent['Receiving Yards']
-        top_emerging = emerging_talent.nlargest(10, 'Total Yards')
-        
+    if not top_performers.empty:
         fig = px.bar(
-            top_emerging,
+            top_performers,
             x='Total Yards',
             y='Player Name',
             color='Team',
             orientation='h',
-            title="Top Emerging Talent by Total Yards",
+            title="Top 15 Players by Total Yards (2024 Season)",
             labels={'Total Yards': 'Total Yards', 'Player Name': 'Player'},
             color_discrete_sequence=px.colors.qualitative.Set3
         )
@@ -305,7 +309,7 @@ else:
         
         st.plotly_chart(fig, use_container_width=True)
     else:
-        st.info("No emerging talent data available for the selected filters.")
+        st.info("No player data available for the selected filters.")
 
     # Download filtered data
     st.header("📥 Download Data")
@@ -320,4 +324,4 @@ else:
 
 # Footer
 st.markdown("---")
-st.markdown("*Data source: CJFL Statistics (Simulated for demonstration purposes)*") 
+st.markdown("*Data source: CJFL Statistics (2024 Season)*") 
