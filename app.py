@@ -268,7 +268,7 @@ else:
                 
                 with col1:
                     st.markdown(f"""
-                    <div class="player-card">
+                    <div class="player-card player-card-1">
                         <h3>{player_info['Player Name']}</h3>
                         <p><strong>Team:</strong> {player_info['Team']}</p>
                         <p><strong>Position:</strong> {player_info['Position']}</p>
