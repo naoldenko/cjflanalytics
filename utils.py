@@ -300,9 +300,19 @@ def create_multi_player_profile(player_data: pd.DataFrame) -> go.Figure:
     
     fig = go.Figure()
     
-    # Color palette for multiple players
-    colors = ['rgb(32, 201, 151)', 'rgb(255, 99, 132)', 'rgb(54, 162, 235)', 
-              'rgb(255, 205, 86)', 'rgb(153, 102, 255)']
+    # Enhanced color palette for multiple players with better differentiation
+    colors = [
+        'rgb(255, 99, 132)',    # Red
+        'rgb(54, 162, 235)',    # Blue
+        'rgb(255, 205, 86)',    # Yellow
+        'rgb(75, 192, 192)',    # Teal
+        'rgb(153, 102, 255)',   # Purple
+        'rgb(255, 159, 64)',    # Orange
+        'rgb(199, 199, 199)',   # Gray
+        'rgb(83, 102, 255)',    # Indigo
+        'rgb(255, 99, 71)',     # Tomato
+        'rgb(50, 205, 50)'      # Lime Green
+    ]
     
     for idx, (_, player_stats) in enumerate(player_data.iterrows()):
         values = []
@@ -323,7 +333,8 @@ def create_multi_player_profile(player_data: pd.DataFrame) -> go.Figure:
             name=player_stats['Player Name'],
             line_color=color,
             fillcolor=color.replace('rgb', 'rgba').replace(')', ', 0.3)'),
-            opacity=0.7
+            opacity=0.8,
+            line=dict(width=2)
         ))
     
     fig.update_layout(
@@ -358,22 +369,32 @@ def create_stat_comparison_chart(player_data: pd.DataFrame, stat_name: str) -> g
     
     fig = go.Figure()
     
-    # Color players by team
-    teams = sorted_data['Team'].unique()
-    colors = ['rgb(32, 201, 151)', 'rgb(255, 99, 132)', 'rgb(54, 162, 235)', 
-              'rgb(255, 205, 86)', 'rgb(153, 102, 255)', 'rgb(255, 159, 64)']
+    # Enhanced color palette for individual players
+    colors = [
+        'rgb(255, 99, 132)',    # Red
+        'rgb(54, 162, 235)',    # Blue
+        'rgb(255, 205, 86)',    # Yellow
+        'rgb(75, 192, 192)',    # Teal
+        'rgb(153, 102, 255)',   # Purple
+        'rgb(255, 159, 64)',    # Orange
+        'rgb(199, 199, 199)',   # Gray
+        'rgb(83, 102, 255)',    # Indigo
+        'rgb(255, 99, 71)',     # Tomato
+        'rgb(50, 205, 50)'      # Lime Green
+    ]
     
-    for team in teams:
-        team_data = sorted_data[sorted_data['Team'] == team]
-        color = colors[list(teams).index(team) % len(colors)]
+    # Color each player individually for better differentiation
+    for idx, (_, player_stats) in enumerate(sorted_data.iterrows()):
+        color = colors[idx % len(colors)]
         
         fig.add_trace(go.Bar(
-            x=team_data['Player Name'],
-            y=team_data[stat_name],
-            name=team,
+            x=[player_stats['Player Name']],
+            y=[player_stats[stat_name]],
+            name=player_stats['Player Name'],
             marker_color=color,
-            text=team_data[stat_name].apply(lambda x: f"{int(x):,}" if stat_name in ['Passing Yards', 'Rushing Yards', 'Receiving Yards'] else str(int(x))),
-            textposition='auto'
+            text=[f"{int(player_stats[stat_name]):,}" if stat_name in ['Passing Yards', 'Rushing Yards', 'Receiving Yards'] else str(int(player_stats[stat_name]))],
+            textposition='auto',
+            showlegend=True
         ))
     
     fig.update_layout(

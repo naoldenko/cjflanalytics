@@ -60,6 +60,11 @@ st.markdown("""
         border: 1px solid #464646;
         margin: 1rem 0;
     }
+    .player-card-1 { border-left: 4px solid #ff6384; }
+    .player-card-2 { border-left: 4px solid #36a2eb; }
+    .player-card-3 { border-left: 4px solid #ffcd56; }
+    .player-card-4 { border-left: 4px solid #4bc0c0; }
+    .player-card-5 { border-left: 4px solid #9966ff; }
     h1, h2, h3 {
         color: #fafafa;
         font-weight: bold;
@@ -341,8 +346,9 @@ else:
                         col_idx = i % 3
                         
                         with cols[col_idx]:
+                            card_class = f"player-card player-card-{i+1}"
                             st.markdown(f"""
-                            <div class="player-card">
+                            <div class="{card_class}">
                                 <h4>{player_info['Player Name']}</h4>
                                 <p><strong>Team:</strong> {player_info['Team']}</p>
                                 <p><strong>Position:</strong> {player_info['Position']}</p>
