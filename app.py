@@ -4,7 +4,23 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
-from utils import load_data, filter_data, create_player_profile, create_team_comparison, create_multi_player_profile, create_stat_comparison_chart
+from utils import load_data, filter_data, create_player_profile, create_team_comparison
+
+# Import new functions with fallback for deployment environments
+try:
+    from utils import create_multi_player_profile, create_stat_comparison_chart
+except ImportError:
+    # Fallback functions for deployment environments that haven't updated yet
+    def create_multi_player_profile(player_data):
+        """Fallback function for multi-player profile"""
+        return create_player_profile(player_data)
+    
+    def create_stat_comparison_chart(player_data, stat_name):
+        """Fallback function for stat comparison chart"""
+        import plotly.graph_objects as go
+        fig = go.Figure()
+        fig.add_annotation(text="Comparison chart not available", xref="paper", yref="paper", x=0.5, y=0.5, showarrow=False)
+        return fig
 
 # Page configuration
 st.set_page_config(
