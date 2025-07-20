@@ -142,42 +142,81 @@ else:
     # Top 10 Players by Stat Category
     st.header("🏆 Top 10 Players by Category")
     
-    # Create tabs for different stat categories
-    stat_tabs = st.tabs(["Passing Yards", "Rushing Yards", "Receiving Yards", "Touchdowns", "Tackles", "Sacks"])
+    # Calculate additional statistics
+    filtered_data['Total Yards'] = filtered_data['Passing Yards'] + filtered_data['Rushing Yards'] + filtered_data['Receiving Yards']
+    filtered_data['Total Offensive Yards'] = filtered_data['Rushing Yards'] + filtered_data['Receiving Yards']
+    filtered_data['Yards per Game'] = filtered_data['Total Yards'] / filtered_data['Games Played']
+    filtered_data['Touchdowns per Game'] = filtered_data['Touchdowns'] / filtered_data['Games Played']
+    filtered_data['Tackles per Game'] = filtered_data['Tackles'] / filtered_data['Games Played']
+    filtered_data['Sacks per Game'] = filtered_data['Sacks'] / filtered_data['Games Played']
+    
+    # Create tabs for all stat categories
+    stat_tabs = st.tabs([
+        "Passing Yards", "Rushing Yards", "Receiving Yards", "Total Yards", "Total Offensive Yards",
+        "Touchdowns", "Touchdowns per Game", "Tackles", "Tackles per Game", "Sacks", "Sacks per Game",
+        "Yards per Game", "Games Played"
+    ])
     
     stat_columns = {
         "Passing Yards": "Passing Yards",
         "Rushing Yards": "Rushing Yards", 
         "Receiving Yards": "Receiving Yards",
+        "Total Yards": "Total Yards",
+        "Total Offensive Yards": "Total Offensive Yards",
         "Touchdowns": "Touchdowns",
+        "Touchdowns per Game": "Touchdowns per Game",
         "Tackles": "Tackles",
-        "Sacks": "Sacks"
+        "Tackles per Game": "Tackles per Game",
+        "Sacks": "Sacks",
+        "Sacks per Game": "Sacks per Game",
+        "Yards per Game": "Yards per Game",
+        "Games Played": "Games Played"
     }
     
     for tab, (tab_name, column) in zip(stat_tabs, stat_columns.items()):
         with tab:
-            top_players = filtered_data.nlargest(10, column)[['Player Name', 'Team', 'Position', column, 'Season']]
+            # Handle per-game stats that might have NaN values
+            if 'per Game' in column:
+                valid_data = filtered_data[filtered_data[column].notna()]
+                top_players = valid_data.nlargest(10, column)[['Player Name', 'Team', 'Position', column]]
+            else:
+                top_players = filtered_data.nlargest(10, column)[['Player Name', 'Team', 'Position', column]]
             
-            fig = px.bar(
-                top_players,
-                x=column,
-                y='Player Name',
-                color='Team',
-                orientation='h',
-                title=f"Top 10 Players by {tab_name}",
-                labels={column: tab_name, 'Player Name': 'Player'},
-                color_discrete_sequence=px.colors.qualitative.Set3
-            )
-            
-            fig.update_layout(
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                font=dict(color='#fafafa'),
-                xaxis=dict(gridcolor='#464646'),
-                yaxis=dict(gridcolor='#464646')
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
+            if not top_players.empty:
+                fig = px.bar(
+                    top_players,
+                    x=column,
+                    y='Player Name',
+                    color='Team',
+                    orientation='h',
+                    title=f"Top 10 Players by {tab_name}",
+                    labels={column: tab_name, 'Player Name': 'Player'},
+                    color_discrete_sequence=px.colors.qualitative.Set3
+                )
+                
+                fig.update_layout(
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    font=dict(color='#fafafa'),
+                    xaxis=dict(gridcolor='#464646'),
+                    yaxis=dict(gridcolor='#464646')
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Display detailed table
+                st.subheader("📋 Detailed Rankings")
+                display_data = top_players.copy()
+                if column in ['Passing Yards', 'Rushing Yards', 'Receiving Yards', 'Total Yards', 'Total Offensive Yards']:
+                    display_data[column] = display_data[column].apply(lambda x: f"{int(x):,}")
+                elif 'per Game' in column:
+                    display_data[column] = display_data[column].apply(lambda x: f"{x:.2f}")
+                else:
+                    display_data[column] = display_data[column].apply(lambda x: f"{int(x)}")
+                
+                st.dataframe(display_data, use_container_width=True)
+            else:
+                st.info(f"No valid data available for {tab_name}")
 
     # Stat Trends Over Years
     st.header("📈 Player Performance Trends")
@@ -194,41 +233,164 @@ else:
         player_trend_data = filtered_data[filtered_data['Player Name'] == selected_player_trend]
         
         if not player_trend_data.empty:
-            # Create subplot for multiple stats
-            fig = make_subplots(
-                rows=2, cols=2,
-                subplot_titles=('Passing Yards', 'Rushing Yards', 'Receiving Yards', 'Touchdowns'),
-                specs=[[{"secondary_y": False}, {"secondary_y": False}],
-                       [{"secondary_y": False}, {"secondary_y": False}]]
-            )
+            # Calculate additional stats for trend analysis
+            player_trend_data = player_trend_data.copy()
+            player_trend_data['Total Yards'] = player_trend_data['Passing Yards'] + player_trend_data['Rushing Yards'] + player_trend_data['Receiving Yards']
+            player_trend_data['Total Offensive Yards'] = player_trend_data['Rushing Yards'] + player_trend_data['Receiving Yards']
+            player_trend_data['Yards per Game'] = player_trend_data['Total Yards'] / player_trend_data['Games Played']
+            player_trend_data['Touchdowns per Game'] = player_trend_data['Touchdowns'] / player_trend_data['Games Played']
             
-            stats_to_plot = ['Passing Yards', 'Rushing Yards', 'Receiving Yards', 'Touchdowns']
-            positions = [(1,1), (1,2), (2,1), (2,2)]
+            # Display player trend metrics
+            st.subheader(f"📊 Performance Metrics for {selected_player_trend}")
             
-            for stat, pos in zip(stats_to_plot, positions):
-                fig.add_trace(
-                    go.Scatter(
-                        x=player_trend_data['Season'],
-                        y=player_trend_data[stat],
-                        mode='lines+markers',
-                        name=stat,
-                        line=dict(width=3)
-                    ),
-                    row=pos[0], col=pos[1]
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                latest_data = player_trend_data.iloc[-1]
+                st.metric("Latest Total Yards", f"{int(latest_data['Total Yards']):,}")
+                st.metric("Latest Yards per Game", f"{latest_data['Yards per Game']:.1f}")
+            
+            with col2:
+                st.metric("Latest Touchdowns", int(latest_data['Touchdowns']))
+                st.metric("Latest TDs per Game", f"{latest_data['Touchdowns per Game']:.2f}")
+            
+            with col3:
+                st.metric("Latest Tackles", int(latest_data['Tackles']))
+                st.metric("Latest Sacks", int(latest_data['Sacks']))
+            
+            with col4:
+                st.metric("Games Played", int(latest_data['Games Played']))
+                st.metric("Position", latest_data['Position'])
+            
+            # Create comprehensive trend analysis
+            trend_tabs = st.tabs(["Offensive Trends", "Defensive Trends", "Per Game Trends", "Season Comparison"])
+            
+            with trend_tabs[0]:
+                # Offensive trends
+                fig = make_subplots(
+                    rows=2, cols=2,
+                    subplot_titles=('Passing Yards', 'Rushing Yards', 'Receiving Yards', 'Total Yards'),
+                    specs=[[{"secondary_y": False}, {"secondary_y": False}],
+                           [{"secondary_y": False}, {"secondary_y": False}]]
                 )
+                
+                offensive_stats = ['Passing Yards', 'Rushing Yards', 'Receiving Yards', 'Total Yards']
+                positions = [(1,1), (1,2), (2,1), (2,2)]
+                
+                for stat, pos in zip(offensive_stats, positions):
+                    fig.add_trace(
+                        go.Scatter(
+                            x=player_trend_data['Season'],
+                            y=player_trend_data[stat],
+                            mode='lines+markers',
+                            name=stat,
+                            line=dict(width=3)
+                        ),
+                        row=pos[0], col=pos[1]
+                    )
+                
+                fig.update_layout(
+                    title=f"Offensive Performance Trends for {selected_player_trend}",
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    font=dict(color='#fafafa'),
+                    height=600
+                )
+                
+                fig.update_xaxes(gridcolor='#464646')
+                fig.update_yaxes(gridcolor='#464646')
+                
+                st.plotly_chart(fig, use_container_width=True)
             
-            fig.update_layout(
-                title=f"Performance Trends for {selected_player_trend}",
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                font=dict(color='#fafafa'),
-                height=600
-            )
+            with trend_tabs[1]:
+                # Defensive trends
+                fig = make_subplots(
+                    rows=1, cols=2,
+                    subplot_titles=('Tackles', 'Sacks'),
+                    specs=[[{"secondary_y": False}, {"secondary_y": False}]]
+                )
+                
+                defensive_stats = ['Tackles', 'Sacks']
+                positions = [(1,1), (1,2)]
+                
+                for stat, pos in zip(defensive_stats, positions):
+                    fig.add_trace(
+                        go.Scatter(
+                            x=player_trend_data['Season'],
+                            y=player_trend_data[stat],
+                            mode='lines+markers',
+                            name=stat,
+                            line=dict(width=3)
+                        ),
+                        row=pos[0], col=pos[1]
+                    )
+                
+                fig.update_layout(
+                    title=f"Defensive Performance Trends for {selected_player_trend}",
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    font=dict(color='#fafafa'),
+                    height=400
+                )
+                
+                fig.update_xaxes(gridcolor='#464646')
+                fig.update_yaxes(gridcolor='#464646')
+                
+                st.plotly_chart(fig, use_container_width=True)
             
-            fig.update_xaxes(gridcolor='#464646')
-            fig.update_yaxes(gridcolor='#464646')
+            with trend_tabs[2]:
+                # Per game trends
+                fig = make_subplots(
+                    rows=1, cols=2,
+                    subplot_titles=('Yards per Game', 'Touchdowns per Game'),
+                    specs=[[{"secondary_y": False}, {"secondary_y": False}]]
+                )
+                
+                per_game_stats = ['Yards per Game', 'Touchdowns per Game']
+                positions = [(1,1), (1,2)]
+                
+                for stat, pos in zip(per_game_stats, positions):
+                    fig.add_trace(
+                        go.Scatter(
+                            x=player_trend_data['Season'],
+                            y=player_trend_data[stat],
+                            mode='lines+markers',
+                            name=stat,
+                            line=dict(width=3)
+                        ),
+                        row=pos[0], col=pos[1]
+                    )
+                
+                fig.update_layout(
+                    title=f"Per Game Performance Trends for {selected_player_trend}",
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    font=dict(color='#fafafa'),
+                    height=400
+                )
+                
+                fig.update_xaxes(gridcolor='#464646')
+                fig.update_yaxes(gridcolor='#464646')
+                
+                st.plotly_chart(fig, use_container_width=True)
             
-            st.plotly_chart(fig, use_container_width=True)
+            with trend_tabs[3]:
+                # Season comparison table
+                st.subheader("📋 Season-by-Season Comparison")
+                
+                comparison_data = player_trend_data[['Season', 'Team', 'Position', 'Games Played', 
+                                                   'Passing Yards', 'Rushing Yards', 'Receiving Yards', 
+                                                   'Total Yards', 'Touchdowns', 'Tackles', 'Sacks',
+                                                   'Yards per Game', 'Touchdowns per Game']].copy()
+                
+                # Format numbers for display
+                for col in ['Passing Yards', 'Rushing Yards', 'Receiving Yards', 'Total Yards']:
+                    comparison_data[col] = comparison_data[col].apply(lambda x: f"{int(x):,}")
+                
+                for col in ['Yards per Game', 'Touchdowns per Game']:
+                    comparison_data[col] = comparison_data[col].apply(lambda x: f"{x:.2f}")
+                
+                st.dataframe(comparison_data, use_container_width=True)
 
     # Team vs Team Comparison
     st.header("🏆 Team Comparison")
